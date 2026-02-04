@@ -49,10 +49,15 @@ headers: {
     );
 
     if (!forwardRes.ok) {
-      const text = await forwardRes.text();
-      console.error('Backend forward failed:', text);
-      return res.status(500).send('Connected to Google, but backend failed.');
-    }
+  const text = await forwardRes.text();
+
+  console.error('Backend error status:', forwardRes.status);
+  console.error('Backend error body:', text);
+
+  return res
+    .status(500)
+    .send(`Backend failed (${forwardRes.status}): ${text}`);
+}
 
 const appRedirect = new URL(
   'https://insights-growth-trends.deploypad.app/'
