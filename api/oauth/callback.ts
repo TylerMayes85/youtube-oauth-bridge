@@ -28,7 +28,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).send('Failed to exchange OAuth code.');
     }
 
-    // 2. Fetch YouTube channel info directly
+    // 2. Fetch YouTube channel info
     const channelRes = await fetch(
       'https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true',
       {
@@ -47,22 +47,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const channel = channelData.items[0];
 
-    // 3. Redirect back to app with non-sensitive channel info
-    const appRedirect = new URL(
-      'https://insights-growth-trends.deploypad.app/'
-    );
-
-    appRedirect.searchParams.set('youtube', 'connected');
-    appRedirect.searchParams.set('channel_id', channel.id);
-    appRedirect.searchParams.set('channel_title', channel.snippet.title);
-    appRedirect.searchParams.set(
-      'channel_thumbnail',
-      channel.snippet.thumbnails?.medium?.url ||
-        channel.snippet.thumbnails?.default?.url ||
-        ''
-    );
-
-    res.redirect(appRedirect.toString());
+    // 3. MVP SUCCESS RESPONSE
+    // Notify main app + close popup
+    res.setHeader('Content-Type', 'text/html');
+    res.send(`
+      <html>
+        <body>
+          <script>
+            try {
+              localStorage.setItem('youtube_connected', 'true');
+              localStorage.setItem('youtube_channel', JSON.stringify({
+                id: ${JSON.stringify(channel.id)},
+                title: ${JSON.stringify(channel.snippet.title)},
+                thumbnail: ${JSON.stringify(
+                  channel.snippet.thumbnails?.medium?.url ||
+                  channel.snippet.thumbnails?.default?.url ||
+                  ''
+                )}
+              }));
+              window.close();
+            } catch (e) {
+              document.body.innerText = 'Connected, but could not notify app.';
+            }
+          </script>
+          <p>YouTube connected. You can close this window.</p>
+        </body>
+      </html>
+    `);
 
   } catch (err) {
     console.error('OAuth bridge error:', err);
