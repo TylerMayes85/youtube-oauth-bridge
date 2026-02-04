@@ -53,16 +53,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).send('Connected to Google, but backend failed.');
     }
 
-    // 3. Success UI
-    res.setHeader('Content-Type', 'text/html');
-    res.send(`
-      <html>
-        <body style="font-family: system-ui; text-align: center; margin-top: 40px;">
-          <h2>✅ YouTube connected successfully</h2>
-          <p>You can close this window and return to the app.</p>
-        </body>
-      </html>
-    `);
+const appRedirect = new URL(
+  'https://insights-growth-trends.deploypad.app/oauth/callback'
+);
+
+appRedirect.searchParams.set('success', 'true');
+appRedirect.searchParams.set('channel_id', channelId);
+appRedirect.searchParams.set('channel_title', channelTitle);
+
+res.redirect(appRedirect.toString());
+
   } catch (err) {
     console.error('OAuth bridge error:', err);
     res.status(500).send('Unexpected OAuth error.');
