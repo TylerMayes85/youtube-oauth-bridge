@@ -49,31 +49,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // 3. MVP SUCCESS RESPONSE
     // Notify main app + close popup
-    res.setHeader('Content-Type', 'text/html');
-    res.send(`
-      <html>
-        <body>
-          <script>
-            try {
-              localStorage.setItem('youtube_connected', 'true');
-              localStorage.setItem('youtube_channel', JSON.stringify({
-                id: ${JSON.stringify(channel.id)},
-                title: ${JSON.stringify(channel.snippet.title)},
-                thumbnail: ${JSON.stringify(
-                  channel.snippet.thumbnails?.medium?.url ||
-                  channel.snippet.thumbnails?.default?.url ||
-                  ''
-                )}
-              }));
-              window.close();
-            } catch (e) {
-              document.body.innerText = 'Connected, but could not notify app.';
+  res.setHeader('Content-Type', 'text/html');
+res.send(`
+<!DOCTYPE html>
+<html>
+  <body>
+    <script>
+      if (window.opener) {
+        window.opener.postMessage(
+          {
+            type: 'YOUTUBE_CONNECTED',
+            channel: {
+              id: '${channel.id}',
+              title: ${JSON.stringify(channel.snippet.title)},
+              thumbnail: '${channel.snippet.thumbnails?.medium?.url || ''}'
             }
-          </script>
-          <p>YouTube connected. You can close this window.</p>
-        </body>
-      </html>
-    `);
+          },
+          '*'
+        );
+      }
+      window.close();
+    </script>
+    <p>YouTube connected. You can close this window.</p>
+  </body>
+</html>
+`);
+
 
   } catch (err) {
     console.error('OAuth bridge error:', err);
