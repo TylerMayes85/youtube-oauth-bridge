@@ -33,10 +33,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       'https://fdrzngyzmfuwnijrmbwp.databasepad.com/functions/v1/youtube-connect',
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.FAMOUS_GATEWAY_API_KEY}`,
-        },
+headers: {
+  'Content-Type': 'application/json',
+  Authorization: `Bearer ${process.env.FAMOUS_GATEWAY_API_KEY}`,
+  apikey: process.env.FAMOUS_GATEWAY_API_KEY!,
+},
         body: JSON.stringify({
           access_token: tokenData.access_token,
           refresh_token: tokenData.refresh_token,
