@@ -28,45 +28,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).send('Failed to exchange OAuth code.');
     }
 
-    // 2. Forward tokens to Famous / DatabasePad
-    const forwardRes = await fetch(
-      'https://fdrzngyzmfuwnijrmbwp.databasepad.com/functions/v1/youtube-connect',
+    // 2. Fetch YouTube channel info directly
+    const channelRes = await fetch(
+      'https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true',
       {
-        method: 'POST',
-headers: {
-  'Content-Type': 'application/json',
-  Authorization: `Bearer ${process.env.FAMOUS_GATEWAY_API_KEY}`,
-  apikey: process.env.FAMOUS_GATEWAY_API_KEY!,
-},
-        body: JSON.stringify({
-          access_token: tokenData.access_token,
-          refresh_token: tokenData.refresh_token,
-          expires_in: tokenData.expires_in,
-          scope: tokenData.scope,
-          token_type: tokenData.token_type,
-        }),
+        headers: {
+          Authorization: `Bearer ${tokenData.access_token}`,
+        },
       }
     );
 
-    if (!forwardRes.ok) {
-  const text = await forwardRes.text();
+    const channelData = await channelRes.json();
 
-  console.error('Backend error status:', forwardRes.status);
-  console.error('Backend error body:', text);
+    if (!channelRes.ok || !channelData.items || channelData.items.length === 0) {
+      console.error('Failed to fetch channel:', channelData);
+      return res.status(500).send('Failed to fetch YouTube channel.');
+    }
 
-  return res
-    .status(500)
-    .send(`Backend failed (${forwardRes.status}): ${text}`);
-}
+    const channel = channelData.items[0];
 
-const appRedirect = new URL(
-  'https://insights-growth-trends.deploypad.app/'
-);
+    // 3. Redirect back to app with non-sensitive channel info
+    const appRedirect = new URL(
+      'https://insights-growth-trends.deploypad.app/'
+    );
 
-appRedirect.searchParams.set('youtube', 'connected');
+    appRedirect.searchParams.set('youtube', 'connected');
+    appRedirect.searchParams.set('channel_id', channel.id);
+    appRedirect.searchParams.set('channel_title', channel.snippet.title);
+    appRedirect.searchParams.set(
+      'channel_thumbnail',
+      channel.snippet.thumbnails?.medium?.url ||
+        channel.snippet.thumbnails?.default?.url ||
+        ''
+    );
 
-res.redirect(appRedirect.toString());
-
+    res.redirect(appRedirect.toString());
 
   } catch (err) {
     console.error('OAuth bridge error:', err);
