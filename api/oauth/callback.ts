@@ -54,14 +54,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
 const appRedirect = new URL(
-  'https://insights-growth-trends.deploypad.app/oauth/callback'
+  'https://insights-growth-trends.deploypad.app/'
 );
 
-appRedirect.searchParams.set('success', 'true');
-appRedirect.searchParams.set('channel_id', channelId);
-appRedirect.searchParams.set('channel_title', channelTitle);
+appRedirect.searchParams.set('youtube', 'connected');
 
 res.redirect(appRedirect.toString());
+
 
   } catch (err) {
     console.error('OAuth bridge error:', err);
