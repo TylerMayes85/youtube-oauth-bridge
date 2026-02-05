@@ -21,7 +21,7 @@
  *   (defaults to https://insights-growth-trends.deploypad.app/oauth/callback)
  */
 
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+
 
 // Configuration
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
@@ -68,7 +68,8 @@ function decodeState(state: string): { redirect_uri: string; csrf: string } | nu
   }
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req, res) {
+
   // CORS headers for preflight
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
