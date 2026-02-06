@@ -1,4 +1,16 @@
 /**
+ * ⚠️ OAUTH CONTRACT LOCKED ⚠️
+ *
+ * This file MUST:
+ * - Always redirect back to the frontend
+ * - Never render HTML
+ * - Never expose tokens
+ *
+ * If OAuth breaks, CHECK /api/health FIRST.
+ *
+ * See README: "YouTube OAuth Contract"
+
+ 
  * Vercel OAuth Bridge for YouTube
  *
  * Deploy to: youtube-oauth-bridge.vercel.app
