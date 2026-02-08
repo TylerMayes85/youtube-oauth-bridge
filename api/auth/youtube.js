@@ -27,6 +27,16 @@
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+console.log('[ENV CHECK]', {
+  hasGoogleClientId: !!GOOGLE_CLIENT_ID,
+  hasGoogleClientSecret: !!GOOGLE_CLIENT_SECRET,
+  hasSupabaseUrl: !!SUPABASE_URL,
+  hasServiceRoleKey: !!SUPABASE_SERVICE_ROLE_KEY,
+});
+
 // Fallback redirect (your app)
 const FALLBACK_REDIRECT_URI =
   process.env.DEFAULT_REDIRECT_URI ||
@@ -168,6 +178,13 @@ export default async function handler(req, res) {
 
       const tokenData = await tokenRes.json();
       const accessToken = tokenData.access_token;
+     
+     const refreshToken = tokenData.refresh_token;
+     const expiresIn = tokenData.expires_in;
+
+     if (!refreshToken) {
+     console.error('[OAUTH] No refresh token returned');
+}
 
       const channelRes = await fetch(
         `${YOUTUBE_CHANNEL_URL}?part=snippet,statistics&mine=true`,
@@ -188,6 +205,43 @@ export default async function handler(req, res) {
 
       const channelData = await channelRes.json();
       const channel = channelData.items && channelData.items[0];
+
+     // ---- STORE TOKENS IN SUPABASE ----
+if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+  const tokenInsertRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/channel_tokens`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        Prefer: 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify({
+        channel_id: channel.id,
+        channel_title: channel.snippet.title,
+        channel_thumbnail: channel.snippet.thumbnails?.default?.url || '',
+        channel_custom_url: channel.snippet.customUrl || '',
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        token_expires_at: new Date(
+          Date.now() + expiresIn * 1000
+        ).toISOString(),
+      }),
+    }
+  );
+
+  if (!tokenInsertRes.ok) {
+    const errText = await tokenInsertRes.text();
+    console.error('[SUPABASE] Token insert failed:', errText);
+  } else {
+    console.log('[SUPABASE] Tokens stored for channel', channel.id);
+  }
+} else {
+  console.error('[SUPABASE] Missing env vars, cannot store tokens');
+}
+
 
       if (!channel) {
         redirectWithError(
