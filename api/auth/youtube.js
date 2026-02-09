@@ -209,14 +209,18 @@ export default async function handler(req, res) {
 
       return res.redirect(302, `${appRedirect}?${params}`);
     } catch (err) {
-      console.error('[OAUTH FATAL]', err);
-      return redirectWithError(
-        res,
-        appRedirect,
-        'server_error',
-        'OAuth server error'
-      );
-    }
+  console.error('[OAUTH FATAL ERROR]', err?.message || err);
+  console.error(err?.stack);
+
+  redirectWithError(
+    res,
+    appRedirect,
+    "server_error",
+    "OAuth server error"
+  );
+  return;
+}
+
   }
 
   // -------- INIT --------
